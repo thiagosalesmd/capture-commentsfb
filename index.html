@@ -1,0 +1,159 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>CONNECT FACEBOOK</title>
+    <!-- <https://electronjs.org/docs/tutorial/security#csp-meta-tag> -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <link href="./assets/css/bootstrap.min.css" rel="stylesheet">
+
+
+</head>
+
+<body>
+
+    <div class="px-4 py-5 my-5">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label">Token</label>
+                            <input id="accesToken" name="token" type="text" class="form-control" value="EAAFjDZADfspkBAKKL4MC3Fnu2E2tLS5yJHTjZC04Ure8hFetsWKqQJgwtl3boZBywU6CWzbePN7pPH63VMarkHwsaANd5AyL2cAg2HzsZBB3HQwoZCDzjw6pWtMdSqZBpvxPuRVVXaIYlFUVKZBec8HVYQPZCS86RAtJFx6740hK13EsPxHC6GDi3SGQkasykcQq2ZCewVLpmLgZDZD" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ID FACEBOOK</label>
+                            <input id="facebook_id" name="facebook_id" type="text" class="form-control"
+                                placeholder="ID Página ou video" value="101036615233342" />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="typeid">
+                            <label class="form-check-label" for="flexSwitchCheckDefault">Video ID</label>
+                        </div>
+                        <button class="btn btn-primary" onclick="validateToken()">
+                            Validar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content px-4">
+
+        <div class="list-group w-auto" id="videoList">
+            <!--<a href="#" class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+                <img src="https://github.com/twbs.png" alt="twbs" width="32" height="32"
+                    class="rounded-circle flex-shrink-0">
+                <div class="d-flex gap-2 w-100 justify-content-between">
+                    <div>
+                        <h6 class="mb-0">List group item heading</h6>
+                        <p class="mb-0 opacity-75">Some placeholder content in a paragraph.</p>
+                    </div>
+                    <small class="opacity-50 text-nowrap">now</small>
+                </div>
+            </a>-->
+
+        </div>
+
+    </div>
+    <script>
+        require('./renderer.js')
+
+        const mysql = require("mysql")
+        const database = mysql.createConnection({
+            host: 'localhost',
+            user: 'root',
+            port: '8889',
+            password: 'root',
+            database: 'facebook'
+        })
+        
+        const FB = require("fb")
+        const accesToken = document.getElementById('accesToken').value
+        const facebook_id = document.getElementById('facebook_id').value
+        const typeId = document.getElementById('typeid').checked
+
+        
+
+        async function validateToken() {
+            console.log('iniciando validacao...')
+            database.connect()
+
+            FB.setAccessToken(accesToken);
+            if (!typeId || !facebook_id) {
+                var commentsHtml = []
+                FB.api(`me/live_videos`, function(response) {
+                    console.log('live_videos', response)
+                    if (response.data) {
+                        let videos = response.data
+                        let html = ''
+                        for (var i = 0; videos.length > i; i++) {
+                            let id = videos[i].id;
+                            
+                            FB.api(`${id}/comments`, function (resp) {
+                                console.log('resp Comments', resp)
+                                var comments = resp.data;
+                                let htmlComments = ''
+                                if (comments) {
+                                    for (var a = 0; comments.length > a; a++) {
+                                        
+                                        if (comments[a].from === undefined || !comments[a].from) {
+                                            var query = "INSERT INTO live_videos (video_id, comment_id, message, name) VALUES ('"+ id +"', '"+ comments[a].id+ "', '"+ comments[a].message +"','NAO IDENTIFICADO')"
+                                           
+                                            html += `<div class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                                                <div class="d-flex gap-2 w-100 justify-content-between">
+                                                    <div>
+                                                        <h6 class="mb-0">Não identificado</h6>
+                                                        <p class="mb-0 opacity-75">${comments[a].message}</p>
+                                                    </div>
+                                                    <small class="opacity-50 text-nowrap">${comments[a].created_time}</small>
+                                                </div>
+                                            </div>`
+                                        } else {
+                                            var query = "INSERT INTO live_videos (video_id, comment_id, message, name) VALUES ('"+ id +"', '"+ comments[a].id+ "', '"+ comments[a].message +"','"+ comments[a].from.name +"')"
+
+                                            html += `<div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+                                                <div class="d-flex gap-2 w-100 justify-content-between">
+                                                    <div>
+                                                        <h6 class="mb-0">${comments[a].from.name }</h6>
+                                                        <p class="mb-0 opacity-75">${comments[a].message}</p>
+                                                    </div>
+                                                    <small class="opacity-50 text-nowrap">${comments[a].created_time}</small>
+                                                </div>
+                                            </div>`
+                                        }
+                                        console.log(query, 'query')
+                                        // EXECUTA A GRAVACAO NO BANCO
+                                        database.query(query, function(error, result, fields) {
+                                            if (error) {
+                                                console.log('error ao fazer insert ', error)
+                                            } else {
+                                                console.log('gravado com sucesso ', result)
+                                            }
+                                        }).end()
+                                    }
+                                }
+                            })
+                                
+                            
+                        }
+                        
+                        document.getElementById('videoList').innerHTML = html
+                        
+                    }
+                })
+            } else {
+                FB.api(`${facebook_id}`, function(response) {
+                    console.log('response', response)
+                })
+            }
+            database.end()
+        }
+
+       
+    </script>
+    <script src="./assets/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>

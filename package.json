@@ -1,0 +1,30 @@
+{
+  "name": "fbConnect",
+  "version": "1.0.0",
+  "description": "Captura os comentarios do facebook, atravees de um token",
+  "main": "main.js",
+  "author": "Thiago Sales",
+  "license": "MIT",
+  "dependencies": {
+    "electron-reload": "^2.0.0-alpha.1",
+    "fb": "^2.0.0",
+    "fs": "^0.0.1-security",
+    "moment": "^2.29.3",
+    "mysql": "^2.18.1",
+    "php-server-manager": "^1.3.3"
+  },
+  "scripts": {
+    "start": "electron main.js",
+    "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
+    "package-win": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/icons/icon.png --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Capture FB\"",
+    "package-linux": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=linux --arch=x64 --icon=assets/icons/icon.png --prune=true --out=release-builds"
+  },
+  "build": {
+    "appId": "com.fbconnect.app",
+    "productName": " Capture Comments FB"
+  },
+  "devDependencies": {
+    "electron": "^19.0.1",
+    "electron-packager": "^15.5.1"
+  }
+}
