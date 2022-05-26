@@ -10,6 +10,7 @@ require("electron-reload")(__dirname, {
 });
 
 const server = new PHPServer({
+    php: "php\\php.exe", 
     port: 8080,
     directory: __dirname,
     directives: {
